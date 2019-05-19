@@ -1,10 +1,10 @@
 let previous_response_timestamp = 0;
-let timeout;
+let timeout_id;
 
 document.getElementById("searchBar").addEventListener("keyup", on_change);
 
 function on_change(evt) {
-  clearTimeout(timeout);
+  clearTimeout(timeout_id);
   if (evt.target.value === "") {
     render_albums([]);
   } else {
@@ -21,7 +21,7 @@ const render_albums = (function() {
     wrapper.innerHTML = "";
 
     albums.forEach(function(album) {
-      wrapper.appendChild(createElement(album));
+      wrapper.appendChild(create_album_elements(album));
     });
   };
 })();
@@ -31,8 +31,8 @@ function queue_album_request(term) {
     term
   );
 
-  const executor = function(resolve, reject) {
-    timeout = setTimeout(function() {
+  const executor = function(resolve) {
+    timeout_id = setTimeout(function() {
       make_net_call(url).then(function(response) {
         if (previous_response_timestamp < response.timestamp) {
           previous_response_timestamp = response.timestamp;
@@ -42,8 +42,7 @@ function queue_album_request(term) {
     }, 300);
   };
 
-  const my_promise = new Promise(executor);
-  return my_promise;
+  return new Promise(executor);
 }
 
 function make_net_call(url) {
@@ -60,6 +59,7 @@ function make_net_call(url) {
       };
     })
     .catch(function(error) {
+      // TODO: handle error
       console.error(
         "There has been a problem with your fetch operation: ",
         error.message
@@ -67,7 +67,7 @@ function make_net_call(url) {
     });
 }
 
-function createElement(params, wrapper) {
+function create_album_elements(album) {
   let entity = document.createElement("li");
 
   let ParentDiv = document.createElement("div");
@@ -78,19 +78,19 @@ function createElement(params, wrapper) {
 
   let NodeA = document.createElement("a");
   let aTextlbl = document.createTextNode("Name : ");
-  let aText = document.createTextNode(params.collectionName);
+  let aText = document.createTextNode(album.collectionName);
 
   let releaseNode = document.createElement("p");
   let releaseTextlbl = document.createTextNode("release date : ");
-  let releaseText = document.createTextNode(params.releaseDate);
+  let releaseText = document.createTextNode(album.releaseDate);
 
   let priceNode = document.createElement("p");
   let priceTextlbl = document.createTextNode("Price : ");
-  let priceText = document.createTextNode(params.collectionPrice);
+  let priceText = document.createTextNode(album.collectionPrice);
 
   let NodeP = document.createElement("p");
   let pTextlbl = document.createTextNode("Artist Name : ");
-  let pText = document.createTextNode(params.artistName);
+  let pText = document.createTextNode(album.artistName);
 
   let NodeImg = document.createElement("img");
 
@@ -110,9 +110,9 @@ function createElement(params, wrapper) {
 
   NodeP.setAttribute("class", "artistName");
 
-  NodeA.setAttribute("href", params.artistViewUrl);
+  NodeA.setAttribute("href", album.artistViewUrl);
 
-  NodeImg.setAttribute("src", params.artworkUrl60);
+  NodeImg.setAttribute("src", album.artworkUrl60);
   NodeImg.setAttribute("class", "artistImage");
 
   entity.appendChild(ParentDiv);
